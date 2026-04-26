@@ -66,6 +66,44 @@ class main(Base):
 
         return total
 
+    # 端口表达式规范化，支持：80、80-90、80,443,1000-1010
+    def normalize_port_expression(self, port):
+        if not isinstance(port, str):
+            return None
+
+        port = port.strip()
+        if port == "":
+            return None
+
+        normalized_ports = []
+        for item in port.split(','):
+            item = item.strip()
+            if item == "":
+                return None
+
+            if '-' in item:
+                p_range = item.split('-', 1)
+                if len(p_range) != 2 or not p_range[0].isdigit() or not p_range[1].isdigit():
+                    return None
+
+                start = int(p_range[0])
+                end = int(p_range[1])
+                if start < 1 or end > 65535 or start > end:
+                    return None
+
+                normalized_ports.append('{}-{}'.format(start, end))
+            else:
+                if not item.isdigit():
+                    return None
+
+                value = int(item)
+                if value < 1 or value > 65535:
+                    return None
+
+                normalized_ports.append(str(value))
+
+        return ','.join(normalized_ports)
+
     def add_fail2ban_rules_to_list(self, ip_list):
         """
         @name 添加 fail2ban 的黑白名单规则到 IP 列表中（去重后追加）
@@ -949,6 +987,10 @@ class main(Base):
 
         if get.port == "":
              return public.fail_v2("The destination port cannot be empty")
+        normalized_port = self.normalize_port_expression(get.port)
+        if normalized_port is None:
+            return public.fail_v2("The destination port is in the wrong format")
+        get.port = normalized_port
 
         from copy import deepcopy
         if get.address != "all" and "," in get.address:

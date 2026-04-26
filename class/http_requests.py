@@ -11,6 +11,7 @@
 # |  宝塔HTTP通信库
 # +-------------------------------------------------------------------
 import os,sys,re
+import shlex
 import ssl
 
 import public
@@ -363,7 +364,10 @@ exit($header."\r\n\r\n".json_encode($body));
         headers_str = self._str_headers(headers)
         _ssl_verify = ''
         if not verify: _ssl_verify = ' -k'
-        result = public.ExecShell("{} -sS -i --connect-timeout {} {} {} 2>&1".format(self._curl_bin() + ' ' +  str(_ssl_verify),timeout,headers_str,url))[0]
+        safe_url = shlex.quote(url)
+        result = public.ExecShell("{} -sS -i --connect-timeout {} {} {} 2>&1".format(
+            self._curl_bin() + ' ' + str(_ssl_verify), timeout, headers_str, safe_url
+        ))[0]
         r_body,r_headers,r_status_code = self._curl_format(result)
         return response(r_body,r_status_code,r_headers)
 
@@ -652,4 +656,3 @@ def get(url,timeout = (15,120),headers = {},verify = False,s_type = None):
         return p.get(url,timeout,get_headers(headers),verify,get_stype(s_type))
     except:
         raise Exception(public.get_error_info())
-

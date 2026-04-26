@@ -1084,10 +1084,16 @@ def panel_cloud_v2(is_csrf=True):
             download_url = 'http://' + download_url
 
     if "toserver" in get and get.toserver == "true":
+        if request.method != 'POST':
+            return public.ReturnJson(False, 'INIT_CSRF_ERR'), json_header
         download_dir = "/tmp/"
         if "download_dir" in get:
             download_dir = get.download_dir
-        local_file = os.path.join(download_dir, get.name)
+        if not public.path_safe_check(get.name):
+            return public.ReturnJson(False, "Unsafe file name"), json_header
+        if not public.path_safe_check(download_dir):
+            return public.ReturnJson(False, "Unsafe path"), json_header
+        local_file = os.path.join(download_dir, os.path.basename(get.name))
 
         input_from_local = False
         if "input_from_local" in get:

@@ -1394,7 +1394,11 @@ Install_Python_Lib() {
         Use_Openssl111="yes"
     fi
 
-    curl -sSk --connect-timeout 5 -m 60 $download_Url/install/pip_select.sh | bash
+    pip_select_tmp="/tmp/pip_select.sh"
+    if curl -fsSL --connect-timeout 5 -m 60 "$download_Url/install/pip_select.sh" -o "$pip_select_tmp"; then
+        bash "$pip_select_tmp"
+        rm -f "$pip_select_tmp"
+    fi
     pyenv_path="/www/server/panel"
     if [ -f $pyenv_path/pyenv/bin/python ]; then
         is_ssl=$($python_bin -c "import ssl" 2>&1 | grep cannot)
