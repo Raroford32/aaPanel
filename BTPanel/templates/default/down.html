@@ -1241,10 +1241,26 @@ td {
                 }
                 $.get('/down/{{data.token}}', { fname: "{{data['to_path']}}", play:"true"}, function (rdata) {
                     var video_list = '<div class="shrink_play_list" data-shrink="1" style="display:block">List up <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></div><div class="play_content" >';
+                    var _escapeHtml = function (str) {
+                        return $('<div/>').text(str == null ? '' : String(str)).html();
+                    };
+                    var _escapeJsString = function (str) {
+                        return String(str == null ? '' : str)
+                            .replace(/\\/g, '\\\\')
+                            .replace(/'/g, "\\'")
+                            .replace(/\r/g, '\\r')
+                            .replace(/\n/g, '\\n')
+                            .replace(/</g, '\\x3C')
+                            .replace(/>/g, '\\x3E');
+                    };
                     for (var i = 0; i < rdata.length; i++) {
-                        var filename = path + '/' + rdata[i].name;
-                        video_list += '<div class="play_item ' + ((filename=== '/'+old_filename) ? 'active' :'')+'" onclick="play_file(this,\'' + filename + '\')">\
-                            <span class="play_item_filename" title="file: ' + filename + '\ntype: ' + rdata[i].type + '" >'+ rdata[i].name +'</span>\
+                        var filename = path + '/' + rdata[i].name,
+                            safe_name = _escapeHtml(rdata[i].name),
+                            safe_type = _escapeHtml(rdata[i].type),
+                            safe_filename_html = _escapeHtml(filename),
+                            safe_filename_js = _escapeJsString(filename);
+                        video_list += '<div class="play_item ' + ((filename=== '/'+old_filename) ? 'active' :'')+'" onclick="play_file(this,\'' + safe_filename_js + '\')">\
+                            <span class="play_item_filename" title="file: ' + safe_filename_html + '\ntype: ' + safe_type + '" >'+ safe_name +'</span>\
                             <span class="play_item_size">' + ToSize(rdata[i].size) + '</span>\
                         </div>'
                     }

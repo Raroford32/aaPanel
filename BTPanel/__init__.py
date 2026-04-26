@@ -455,6 +455,7 @@ def request_check():
     # 新增   适配docker时增加 未测试
     # 处理登录页面相对路径的静态文件
     if request.path.startswith('/static/'):
+        if not public.path_safe_check(request.path): return abort(404)  # 路径安全检查
         static_file = public.get_panel_path() + '/BTPanel' + request.path
         plugin_static_file = public.get_panel_path() + '/plugin' + request.path
         if os.path.exists(static_file):
@@ -467,8 +468,6 @@ def request_check():
         # 2024/1/3 下午 8:35 检测_auth_path是否有包含2个以上/符号,如果有则取最后一个/符号前的字符串然后替换成_auth_path
         if _auth_path.count('/') > 1:
             new_auth_path = _auth_path[:_auth_path.rfind('/')]
-
-        if not public.path_safe_check(request.path): return abort(404)  # 路径安全检查
 
         _new_route = request.path[0:request.path.find('/static/')]
         if request.path.find(_auth_path) == 0:
@@ -1858,10 +1857,16 @@ def panel_cloud(is_csrf=True):
             download_url = 'http://' + download_url
 
     if "toserver" in get and get.toserver == "true":
+        if request.method != 'POST':
+            return Response(public.ReturnJson(False, 'INIT_CSRF_ERR'), content_type='application/json; charset=utf-8')
         download_dir = "/tmp/"
         if "download_dir" in get:
             download_dir = get.download_dir
-        local_file = os.path.join(download_dir, get.name)
+        if not public.path_safe_check(get.name):
+            return public.ReturnJson(False, "Unsafe file name"), json_header
+        if not public.path_safe_check(download_dir):
+            return public.ReturnJson(False, "Unsafe path"), json_header
+        local_file = os.path.join(download_dir, os.path.basename(get.name))
 
         input_from_local = False
         if "input_from_local" in get:
@@ -5427,10 +5432,16 @@ def panel_cloud_v2(is_csrf=True):
             download_url = 'http://' + download_url
 
     if "toserver" in get and get.toserver == "true":
+        if request.method != 'POST':
+            return Response(public.ReturnJson(False, 'INIT_CSRF_ERR'), content_type='application/json; charset=utf-8')
         download_dir = "/tmp/"
         if "download_dir" in get:
             download_dir = get.download_dir
-        local_file = os.path.join(download_dir, get.name)
+        if not public.path_safe_check(get.name):
+            return public.ReturnJson(False, "Unsafe file name"), json_header
+        if not public.path_safe_check(download_dir):
+            return public.ReturnJson(False, "Unsafe path"), json_header
+        local_file = os.path.join(download_dir, os.path.basename(get.name))
 
         input_from_local = False
         if "input_from_local" in get:

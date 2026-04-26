@@ -3246,11 +3246,27 @@ var bt_file = {
             success: function () {
                 $.post('/files?action=get_videos', { path: path }, function (rdata) {
                     var video_list = '<table class="table table-hover" style="margin-bottom:0;"><thead style="display: none;"><tr><th style="word-break: break-all;word-wrap:break-word;width:165px;">File name</th><th style="width:65px" style="text-align:right;">Size</th></tr></thead>',index = 0;
+                    var _escapeHtml = function (str) {
+                        return $('<div/>').text(str == null ? '' : String(str)).html();
+                    };
+                    var _escapeJsString = function (str) {
+                        return String(str == null ? '' : str)
+                            .replace(/\\/g, '\\\\')
+                            .replace(/'/g, "\\'")
+                            .replace(/\r/g, '\\r')
+                            .replace(/\n/g, '\\n')
+                            .replace(/</g, '\\x3C')
+                            .replace(/>/g, '\\x3E');
+                    };
                     for (var i = 0; i < rdata.length; i++) {
-                        var filename = path + '/' + rdata[i].name;
+                        var filename = path + '/' + rdata[i].name,
+                            safe_name = _escapeHtml(rdata[i].name),
+                            safe_type = _escapeHtml(rdata[i].type),
+                            safe_filename_html = _escapeHtml(filename),
+                            safe_filename_js = _escapeJsString(filename);
                         if(filename === old_filename) index = i;
-                        video_list += '<tr class="' + ((filename === old_filename) ? 'video-avt' :'') + '"><td style="word-break: break-all;word-wrap:break-word;width:150px" onclick="bt_file.play_file(this,\'' + filename + '\')" title="Size: ' + filename + '\nType: ' + rdata[i].type + '"><a>'
-                            + rdata[i].name + '</a></td><td style="font-size: 8px;text-align:right;width:'+ (65 + bt_file.scroll_width) +'px;">' + ToSize(rdata[i].size) + '</td></tr>';
+                        video_list += '<tr class="' + ((filename === old_filename) ? 'video-avt' :'') + '"><td style="word-break: break-all;word-wrap:break-word;width:150px" onclick="bt_file.play_file(this,\'' + safe_filename_js + '\')" title="Size: ' + safe_filename_html + '\nType: ' + safe_type + '"><a>'
+                            + safe_name + '</a></td><td style="font-size: 8px;text-align:right;width:'+ (65 + bt_file.scroll_width) +'px;">' + ToSize(rdata[i].size) + '</td></tr>';
                     }
                     video_list += '</table>';
                     $('.video-list').html(video_list).scrollTop(index * 34);
